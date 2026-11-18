@@ -70,7 +70,7 @@ Install a GitHub App on the repositories you want Draken to review. For `opened`
 
 Draken only posts comments. It does not approve, request changes, merge, or modify repository files.
 
-## Current limitations
+## Database foundation\n\nA Supabase PostgreSQL schema with owner-scoped Row Level Security is included in `supabase/migrations/0001_initial_schema.sql`. See [docs/SUPABASE_SETUP.md](docs/SUPABASE_SETUP.md). The current dashboard history is browser-local; Supabase login/session wiring and cloud persistence are not yet enabled.\n\n## Current limitations
 
 - The UI currently supports pasted snippets. The GitHub App webhook provides the automated PR-review path once deployed and configured.
 - Local analysis is a small set of heuristics, not a complete static analyzer.
