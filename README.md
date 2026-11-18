@@ -1,85 +1,85 @@
 # Draken Reviews
 
-**AI-powered code review and developer intelligence.** Catch risky patterns, understand code quality, and get actionable fixes before you ship.
+**A free, open-source, local-first AI code review workspace.** Draken sends source code directly from your browser to [Ollama](https://ollama.com/) on your computer. No paid AI API, hosted database, or application server is required.
 
 ## Features
 
-- Dark developer dashboard with a code editor-style input and review results
-- Code health score, severity counts, and prioritized findings
-- Local pattern-analysis fallback when no AI key is configured
-- Optional OpenAI-compatible AI review integration (credentials stay server-side)
-- GitHub App webhook integration for automatic pull-request reviews
-- Inline PR comments are restricted to added lines verified against the actual diff
-- CI workflow for TypeScript validation and production builds
+- Local AI code review and corrected-code generation using Ollama
+- Configurable Ollama URL and model name in the dashboard
+- Public GitHub pull-request diff review (paste a public PR URL)
+- Severity-ranked findings, code quality score, and suggested fixes
+- Review history saved in your browser's local storage
+- Static website deployment to GitHub Pages through GitHub Actions
 
-## Tech stack
+## Free stack
 
-- Next.js 14 App Router, React 18, TypeScript
-- Tailwind CSS 3
-- Zod request validation
-- OpenAI-compatible Chat Completions API
-- GitHub App authentication and webhooks
+- Next.js, React, TypeScript, Tailwind CSS
+- [Ollama](https://ollama.com/) for local inference
+- [Qwen2.5-Coder](https://ollama.com/library/qwen2.5-coder) as the suggested coding model
+- Git and GitHub for source control and hosting
+- GitHub Actions for automated build and deployment
 
 ## Run locally
 
-Requirements: Node.js 20+ and npm.
+Requirements: Node.js 20+, npm, and Ollama.
 
 ```bash
 git clone https://github.com/sarathbhimavarapu1-cloud/Draken-Reviews.git
 cd Draken-Reviews
 npm install
-cp .env.example .env.local
+ollama pull qwen2.5-coder:7b
+ollama serve
+```
+
+In another terminal:
+
+```bash
 npm run dev
 ```
 
-Open http://localhost:3000. Without an AI key, pasted-code reviews use local heuristic checks. For AI reviews, set `AI_API_KEY` in `.env.local`.
+Open http://localhost:3000. In the dashboard, keep the Ollama URL as `http://localhost:11434` and model as `qwen2.5-coder:7b` (or enter a model you have pulled).
 
-## Environment variables
+### Allow browser access to Ollama
 
-| Variable | Purpose |
-| --- | --- |
-| `AI_API_KEY` | AI provider API key |
-| `AI_BASE_URL` | Optional OpenAI-compatible API base URL |
-| `AI_MODEL` | Optional model name (defaults to `gpt-4o-mini`) |
-| `GITHUB_APP_ID` | GitHub App ID |
-| `GITHUB_APP_PRIVATE_KEY` | Full PEM private key for the GitHub App |
-| `GITHUB_WEBHOOK_SECRET` | Secret configured in GitHub App webhook settings |
+Ollama must allow requests from the website origin. For local development, include `http://localhost:3000` in `OLLAMA_ORIGINS`. For the deployed site, also include `https://sarathbhimavarapu1-cloud.github.io`.
 
-GitHub App setup is documented in [docs/GITHUB_APP_SETUP.md](docs/GITHUB_APP_SETUP.md). Never commit `.env.local`, private keys, or provider credentials.
+On Windows, set the variable in the environment used by the Ollama application, then restart Ollama:
 
-## Deploy to Vercel
+```powershell
+[Environment]::SetEnvironmentVariable('OLLAMA_ORIGINS','http://localhost:3000,https://sarathbhimavarapu1-cloud.github.io','User')
+```
 
-1. Import this repository at https://vercel.com/new.
-2. Select the Next.js framework preset and root directory `./`.
-3. Add the environment variables required for the features you want to enable.
-4. Deploy the project.
-5. Configure the GitHub App webhook URL as `https://YOUR-DOMAIN/api/github/webhook`.
+On macOS/Linux, configure `OLLAMA_ORIGINS` for the Ollama service before starting it. See the [Ollama FAQ](https://github.com/ollama/ollama/blob/main/docs/faq.md) for platform-specific instructions.
 
-The application can run pasted-code local analysis without external credentials. Live AI and automated GitHub PR reviews require the corresponding server-side credentials.
+If the browser blocks the request, check that Ollama is running, the model is installed, and the exact site origin is allowed. Do not expose Ollama's port to the public internet.
 
-## GitHub pull-request reviews
+## Deploy free with GitHub Pages
 
-Install a GitHub App on the repositories you want Draken to review. For `opened`, `synchronize`, `reopened`, and `ready_for_review` pull-request events, the webhook:
+1. Open repository **Settings → Pages**.
+2. Under **Build and deployment → Source**, select **GitHub Actions**.
+3. Push a commit to `main` (or run the workflow manually under **Actions**).
+4. After the workflow succeeds, the site will be available at:
+   `https://sarathbhimavarapu1-cloud.github.io/Draken-Reviews/`
 
-1. Verifies GitHub's HMAC SHA-256 webhook signature.
-2. Creates a short-lived installation access token using the GitHub App private key.
-3. Fetches the pull-request diff.
-4. Sends the diff to the configured AI provider.
-5. Validates proposed inline comments against added lines in the diff.
-6. Posts a normal GitHub PR review with a summary and eligible inline comments.
+The workflow builds and deploys the static frontend. Ollama remains on each user's computer, so visitors need their own Ollama installation and model. No paid inference or server hosting is required.
 
-Draken only posts comments. It does not approve, request changes, merge, or modify repository files.
+## Review a GitHub pull request
 
-## Database foundation\n\nA Supabase PostgreSQL schema with owner-scoped Row Level Security is included in `supabase/migrations/0001_initial_schema.sql`. See [docs/SUPABASE_SETUP.md](docs/SUPABASE_SETUP.md). The current dashboard history is browser-local; Supabase login/session wiring and cloud persistence are not yet enabled.\n\n## Current limitations
+Select **GitHub pull request** in the source dropdown and paste a public pull-request URL such as `https://github.com/owner/repository/pull/123`. Draken retrieves the public diff through GitHub's API and analyzes it locally with Ollama. Private repositories are not supported in this static, credential-free version. Draken does not automatically post GitHub comments.
 
-- The UI currently supports pasted snippets. The GitHub App webhook provides the automated PR-review path once deployed and configured.
-- Local analysis is a small set of heuristics, not a complete static analyzer.
-- Review history, user accounts, team workspaces, and repository browsing inside the dashboard are not implemented yet.
-- Production deployments should add authentication, rate limiting, usage controls, and abuse monitoring before accepting public traffic.
-- AI output is advisory. Validate findings with tests and human review.
+## Privacy and limitations
+
+- Pasted code and fix requests are sent directly from the browser to the Ollama URL you configure; Draken does not relay them through a Draken server.
+- Public PR diffs are downloaded from GitHub, then analyzed locally.
+- Review history is stored only in the current browser profile.
+- AI output can be incorrect. Inspect findings and generated fixes and run tests before merging.
+- Model quality and speed depend on your hardware. A 7B model may need several GB of RAM; smaller models may suit lower-spec devices.
+- GitHub Pages cannot run Next.js API routes or host Ollama. Automatic webhook reviews, private repository access, shared accounts, and cloud history are intentionally excluded from this free static version.
 
 ## Security
 
-The AI provider receives code snippets or pull-request diffs submitted for AI review. Confirm your source-code and provider data-handling policies before use. Install the GitHub App only on repositories you intend to review, and keep all credentials in server-side environment variables.
+Never expose your Ollama port to the public internet. Allow only trusted browser origins in `OLLAMA_ORIGINS`. Do not submit secrets or proprietary code unless your policies permit it.
 
-See [SECURITY.md](SECURITY.md) for reporting guidance.
+## License
+
+MIT. See [LICENSE](LICENSE) if included in this repository.
